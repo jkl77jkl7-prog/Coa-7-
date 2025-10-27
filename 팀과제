@@ -53,7 +53,7 @@ void gameOver() {
   fill(255, 80, 80);
   textAlign(CENTER, CENTER);
   textFont(font, 28);
-  text("GAME OVER \nPress R to Restart", width/2, height/2);
+  text("GAME OVER\nPress R to Restart\nPress S to return to start screen", width/2, height/2);
 }
 
 void resetGame() {
