@@ -30,7 +30,7 @@ float[] mouseX = new float[mouseCount];
 float[] mouseY = new float[mouseCount];
 boolean[] mouseAlive = new boolean[mouseCount];
 
-// 고양이 관련
+// 아이템 관련
 int catCount = 10;
 float[] catX = new float[catCount];
 float[] catY = new float[catCount];
@@ -142,7 +142,7 @@ void playGame() {
     }
   }
 
-  // 고양이 생성 (3초마다)
+  // 아이템 생성 (3초마다)
   if (frameCount % 180 == 0) {
     for (int i=0; i<catCount; i++) {
       if (!catAlive[i]) {
@@ -155,7 +155,7 @@ void playGame() {
     }
   }
 
-  // 고양이 이동 및 충돌
+  // 아이템 이동 및 충돌
   for (int i=0; i<catCount; i++) {
     if (catAlive[i]) {
       catY[i] += 3;
@@ -262,7 +262,7 @@ void drawMouse(float x,float y, float d){
   line(x+3*d,y,x+5*d,y);
 }
 
-// 고양이
+// 아이템
 void drawCat(float x, float y, int type) {
   if (type == 0) {
     fill(0);
