@@ -1,7 +1,4 @@
-//Coa 7조
-
-ArrayList<PVector> mice = new ArrayList<PVector>();
-ArrayList<Cat> cats = new ArrayList<Cat>();
+// Coa 7조 묘수 팀과제 
 
 int state = 0;
 int life = 3;
@@ -12,27 +9,40 @@ float pacSpeed = 3;
 float pacBaseSpeed = 3;
 int pacDir = 1;
 boolean mouthOpen = true;
-boolean prevMouthOpen = false; // 쥐 타이밍용
-int mouthSpeed = 10;
+boolean prevMouthOpen = false;
+int mouthSpeed = 13;
 int pacSlowTimer = 0;
 float pacSize = 40;
-color pacColor = color(255, 255, 0); // 노란색
+color pacColor = color(255, 255, 0);
 
 // 도라에몽 변수
 float doraX, doraY;
 boolean stunned = false;
 int stunTimer = 0;
 
-// 시간 관련
+// 시간
 int startTime = 0;
 int elapsedSec = 0;
+
+// 쥐 관련
+int mouseCount = 50;
+float[] mouseX = new float[mouseCount];
+float[] mouseY = new float[mouseCount];
+boolean[] mouseAlive = new boolean[mouseCount];
+
+// 고양이 관련
+int catCount = 10;
+float[] catX = new float[catCount];
+float[] catY = new float[catCount];
+int[] catType = new int[catCount];  // 0=검정, 1=황금
+boolean[] catAlive = new boolean[catCount];
 
 PFont font;
 
 void setup() {
   size(800, 600);
   font = createFont("Arial", 20);
-  resetGame(0);
+  resetGame();
 }
 
 void draw() {
@@ -46,7 +56,7 @@ void startScreen() {
   fill(255);
   textAlign(CENTER, CENTER);
   textFont(font, 28);
-  text("Coa team 7 \nPress ENTER to Start", width/2, height/2);
+  text("PacDora Battle - Sprint 3\nPress ENTER to Start", width/2, height/2);
 }
 
 void gameOver() {
@@ -56,7 +66,7 @@ void gameOver() {
   text("GAME OVER\nPress R to Restart\nPress S to return to start screen", width/2, height/2);
 }
 
-void resetGame(int goToState) {
+void resetGame() {
   pacX = width/2;
   pacY = 80;
   pacSpeed = pacBaseSpeed;
@@ -65,91 +75,101 @@ void resetGame(int goToState) {
   pacColor = color(255, 255, 0);
   doraX = width/2;
   doraY = height - 80;
-  mice.clear();
-  cats.clear();
   life = 3;
   stunned = false;
   stunTimer = 0;
   startTime = millis();
   elapsedSec = 0;
-  state = goToState;
+
+  for (int i=0; i<mouseCount; i++) mouseAlive[i] = false;
+  for (int i=0; i<catCount; i++) catAlive[i] = false;
+
+  state = 0;
 }
 
-// ---------------- 메인 루프 ----------------
+// ---------------- 게임 진행 ----------------
 void playGame() {
-  // 경과 시간 계산
   elapsedSec = (millis() - startTime) / 1000;
 
-  // 팩맨 단계 변화 (시간 기반)
-  if (elapsedSec >= 60) { // 2단계
-    pacColor = color(255, 0, 0);  // 빨강
+  // 단계별 설정
+  if (elapsedSec >= 60) {
+    pacColor = color(255, 0, 0);
     pacSize = 60;
     mouthSpeed = 6;
-  } else if (elapsedSec >= 30) { // 1단계
-    pacColor = color(255, 165, 0); // 주황
+  } else if (elapsedSec >= 30) {
+    pacColor = color(255, 165, 0);
     pacSize = 50;
-    mouthSpeed = 9;
+    mouthSpeed = 8;
   } else {
-    pacColor = color(255, 255, 0); // 노랑
+    pacColor = color(255, 255, 0);
     pacSize = 40;
     mouthSpeed = 13;
   }
 
-  // 팩맨 좌우 이동
+  // 팩맨 이동
   pacX += pacSpeed * pacDir;
   if (pacX < 60 || pacX > width - 60) pacDir *= -1;
 
   // 팩맨 입 여닫기
   if (frameCount % mouthSpeed == 0) mouthOpen = !mouthOpen;
 
-  // 쥐 타이밍: 입이 닫힘 → 열림 순간에만 한 마리 발사
+  // 입 열릴 때 쥐 발사
   if (mouthOpen && !prevMouthOpen) {
-    mice.add(new PVector(pacX, pacY + pacSize/2));
+    for (int i=0; i<mouseCount; i++) {
+      if (!mouseAlive[i]) {
+        mouseX[i] = pacX;
+        mouseY[i] = pacY + pacSize/2;
+        mouseAlive[i] = true;
+        break;
+      }
+    }
   }
   prevMouthOpen = mouthOpen;
 
-  // 팩맨 그리기
   drawPacman(pacX, pacY, pacSize, (mouthOpen)?1:0, pacColor);
 
-  // 쥐 이동 (단계별 속도 증가)
+  // 쥐 이동
   float mouseSpeed = (elapsedSec >= 60) ? 8 : (elapsedSec >= 30 ? 6 : 5);
-  for (int i = mice.size() - 1; i >= 0; i--) {
-    PVector m = mice.get(i);
-    m.y += mouseSpeed;
-    drawMouse(m.x, m.y, 3);
-    if (dist(m.x, m.y, doraX, doraY) < 40) {
-      mice.remove(i);
-      life--;
-      if (life <= 0) state = 2;
-    } else if (m.y > height) {
-      mice.remove(i);
+  for (int i=0; i<mouseCount; i++) {
+    if (mouseAlive[i]) {
+      mouseY[i] += mouseSpeed;
+      drawMouse(mouseX[i], mouseY[i], 3);
+      if (dist(mouseX[i], mouseY[i], doraX, doraY) < 40) {
+        mouseAlive[i] = false;
+        life--;
+        if (life <= 0) state = 2;
+      } else if (mouseY[i] > height) mouseAlive[i] = false;
     }
   }
 
   // 고양이 생성 (3초마다)
   if (frameCount % 180 == 0) {
-    float x = random(60, width - 60);
-    float type = random(1);
-    cats.add(new Cat(x, 100, (type < 0.5) ? 0 : 1)); // 0=검정, 1=황금
+    for (int i=0; i<catCount; i++) {
+      if (!catAlive[i]) {
+        catX[i] = random(60, width - 60);
+        catY[i] = 100;
+        catType[i] = (random(1) < 0.5) ? 0 : 1;
+        catAlive[i] = true;
+        break;
+      }
+    }
   }
 
-  // 고양이 이동 및 효과
-  for (int i = cats.size() - 1; i >= 0; i--) {
-    Cat c = cats.get(i);
-    c.update();
-    c.display();
-
-    if (dist(c.x, c.y, doraX, doraY) < 50) {
-      if (c.type == 1) { // 황금 고양이
-        pacSpeed = pacBaseSpeed * 0.5; // 팩맨 느려짐
-        pacSlowTimer = 180; // 3초 지속
-      } else if (c.type == 0) { // 검정 고양이
-        stunned = true;
-        stunTimer = 180; // 3초 스턴
-      }
-      cats.remove(i);
-    } else if (c.y > height) {
-      cats.remove(i);
+  // 고양이 이동 및 충돌
+  for (int i=0; i<catCount; i++) {
+    if (catAlive[i]) {
+      catY[i] += 3;
+      drawCat(catX[i], catY[i], catType[i]);
+      if (dist(catX[i], catY[i], doraX, doraY) < 50) {
+        if (catType[i] == 1) {
+          pacSpeed = pacBaseSpeed * 0.5;
+          pacSlowTimer = 180;
+        } else {
+          stunned = true;
+          stunTimer = 180;
+        }
+        catAlive[i] = false;
+      } else if (catY[i] > height) catAlive[i] = false;
     }
   }
 
@@ -169,25 +189,29 @@ void playGame() {
     stunTimer--;
     if (stunTimer <= 0) stunned = false;
   }
-
   doraX = constrain(doraX, 50, width - 50);
+
   drawDoraemon(doraX, doraY, 40);
 
-  // ---------------- UI 표시 ----------------
+  // UI
   fill(255);
   textAlign(LEFT, TOP);
   text("Life: " + life, 10, 10);
   text("Time: " + elapsedSec + "s", 10, 30);
-  if (stunned) text(" Stunned!", 10, 50);
-  if (pacSlowTimer > 0) text(" Pacman Slow!", 10, 70);
+  if (stunned) text("Stunned", 10, 50);
+  if (pacSlowTimer > 0) text("Pacman Slow", 10, 70);
 }
 
 void keyPressed() {
-    if (state == 0 && keyCode == ENTER) state = 1;
-    if (state == 2 && (key == 'r' || key == 'R')) resetGame(1);
-    else if (state == 2 && (key == 's' || key == 'S')) resetGame(0); 
+  if (state == 0 && keyCode == ENTER) state = 1;
+  if (state == 2 && (key == 'r' || key == 'R')) resetGame();
+  if (state == 2 && (key == 's' || key == 'S')) { // S키로 시작화면 복귀
+    resetGame();
+    state = 0;
+  }
 }
-// ---------------- 캐릭터 함수 ----------------
+
+// ---------------- 캐릭터 ----------------
 
 // 팩맨
 void drawPacman(float x, float y, float r, int s, color c) {
@@ -238,36 +262,20 @@ void drawMouse(float x,float y, float d){
   line(x+3*d,y,x+5*d,y);
 }
 
-// 고양이 클래스
-class Cat {
-  float x, y;
-  int type; // 0=검정, 1=황금
-  float speed = 3;
-
-  Cat(float x, float y, int type) {
-    this.x = x;
-    this.y = y;
-    this.type = type;
-  }
-
-  void update() {
-    y += speed;
-  }
-
-  void display() {
-    if (type == 0) { // 검정 고양이
-      fill(0);
-      stroke(255);
-    } else { // 황금 고양이
-      fill(255, 215, 0);
-      stroke(255);
-    }
-    circle(x, y, 40);
-    fill(255);
-    circle(x-10, y-5, 8);
-    circle(x+10, y-5, 8);
+// 고양이
+void drawCat(float x, float y, int type) {
+  if (type == 0) {
     fill(0);
-    circle(x-10, y-5, 4);
-    circle(x+10, y-5, 4);
+    stroke(255);
+  } else {
+    fill(255, 215, 0);
+    stroke(255);
   }
+  circle(x, y, 40);
+  fill(255);
+  circle(x-10, y-5, 8);
+  circle(x+10, y-5, 8);
+  fill(0);
+  circle(x-10, y-5, 4);
+  circle(x+10, y-5, 4);
 }
