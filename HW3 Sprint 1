@@ -41,7 +41,7 @@ void startScreen() {
   fill(255);
   textAlign(CENTER, CENTER);
   textFont(font, 28);
-  text("PacDora Battle - Sprint 1\nPress ENTER to Start", width/2, height/2);
+  text("Coa team 7 - Sprint 1\nPress ENTER to Start", width/2, height/2);
 }
 
 void gameOver() {
