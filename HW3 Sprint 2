@@ -1,0 +1,246 @@
+// Sprint 2
+
+int state = 0;
+int life = 3;
+
+float pacX, pacY;
+float pacSpeed = 3;
+float pacBaseSpeed = 3;
+int pacDir = 1;
+boolean mouthOpen = true;
+boolean prevMouthOpen = false;
+int mouthSpeed = 13;
+int pacSlowTimer = 0;
+float pacSize = 40;
+color pacColor = color(255, 255, 0);
+
+float doraX, doraY;
+boolean stunned = false;
+int stunTimer = 0;
+
+int startTime = 0;
+
+// 쥐
+int mouseCount = 50;
+float[] mouseX = new float[mouseCount];
+float[] mouseY = new float[mouseCount];
+boolean[] mouseAlive = new boolean[mouseCount];
+
+// 고양이
+int catCount = 10;
+float[] catX = new float[catCount];
+float[] catY = new float[catCount];
+int[] catType = new int[catCount]; // 0=검정, 1=황금
+boolean[] catAlive = new boolean[catCount];
+
+PFont font;
+
+void setup() {
+  size(800, 600);
+  font = createFont("Arial", 20);
+  resetGame();
+}
+
+void draw() {
+  background(0);
+  if (state == 0) startScreen();
+  else if (state == 1) playGame();
+  else if (state == 2) gameOver();
+}
+
+void startScreen() {
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textFont(font, 28);
+  text("Coa team 7 - Sprint 2\nPress ENTER to Start", width/2, height/2);
+}
+
+void gameOver() {
+  fill(255, 80, 80);
+  textAlign(CENTER, CENTER);
+  textFont(font, 28);
+  text("GAME OVER\nPress R to Restart\nPress S to return to start screen", width/2, height/2);
+}
+
+void resetGame() {
+  pacX = width/2;
+  pacY = 80;
+  pacSpeed = pacBaseSpeed;
+  pacSlowTimer = 0;
+  pacSize = 40;
+  pacColor = color(255, 255, 0);
+  doraX = width/2;
+  doraY = height - 80;
+  life = 3;
+  stunned = false;
+  stunTimer = 0;
+  for (int i=0; i<mouseCount; i++) mouseAlive[i] = false;
+  for (int i=0; i<catCount; i++) catAlive[i] = false;
+  startTime = millis();
+  state = 0;
+}
+
+void playGame() {
+  pacX += pacSpeed * pacDir;
+  if (pacX < 60 || pacX > width - 60) pacDir *= -1;
+
+  if (frameCount % mouthSpeed == 0) mouthOpen = !mouthOpen;
+
+  if (mouthOpen && !prevMouthOpen) {
+    for (int i=0; i<mouseCount; i++) {
+      if (!mouseAlive[i]) {
+        mouseX[i] = pacX;
+        mouseY[i] = pacY + pacSize/2;
+        mouseAlive[i] = true;
+        break;
+      }
+    }
+  }
+  prevMouthOpen = mouthOpen;
+
+  drawPacman(pacX, pacY, pacSize, (mouthOpen)?1:0, pacColor);
+
+  for (int i=0; i<mouseCount; i++) {
+    if (mouseAlive[i]) {
+      mouseY[i] += 5;
+      drawMouse(mouseX[i], mouseY[i], 3);
+      if (dist(mouseX[i], mouseY[i], doraX, doraY) < 40) {
+        mouseAlive[i] = false;
+        life--;
+        if (life <= 0) state = 2;
+      } else if (mouseY[i] > height) mouseAlive[i] = false;
+    }
+  }
+
+  // 고양이 생성
+  if (frameCount % 180 == 0) {
+    for (int i=0; i<catCount; i++) {
+      if (!catAlive[i]) {
+        catX[i] = random(60, width - 60);
+        catY[i] = 100;
+        catType[i] = (random(1) < 0.5) ? 0 : 1;
+        catAlive[i] = true;
+        break;
+      }
+    }
+  }
+
+  // 고양이 이동 및 충돌
+  for (int i=0; i<catCount; i++) {
+    if (catAlive[i]) {
+      catY[i] += 3;
+      drawCat(catX[i], catY[i], catType[i]);
+      if (dist(catX[i], catY[i], doraX, doraY) < 50) {
+        if (catType[i] == 1) {
+          pacSpeed = pacBaseSpeed * 0.5;
+          pacSlowTimer = 180;
+        } else {
+          stunned = true;
+          stunTimer = 180;
+        }
+        catAlive[i] = false;
+      } else if (catY[i] > height) catAlive[i] = false;
+    }
+  }
+
+  // 효과 복원
+  if (pacSlowTimer > 0) {
+    pacSlowTimer--;
+    if (pacSlowTimer == 0) pacSpeed = pacBaseSpeed;
+  }
+  if (stunned) {
+    stunTimer--;
+    if (stunTimer <= 0) stunned = false;
+  }
+
+  // 도라에몽 이동
+  if (!stunned) {
+    if (keyPressed) {
+      if (keyCode == LEFT) doraX -= 8;
+      if (keyCode == RIGHT) doraX += 8;
+    }
+  }
+
+  doraX = constrain(doraX, 50, width - 50);
+  drawDoraemon(doraX, doraY, 40);
+
+  fill(255);
+  textAlign(LEFT, TOP);
+  text("Life: " + life, 10, 10);
+  if (stunned) text("Stunned", 10, 30);
+  if (pacSlowTimer > 0) text("Pacman Slow", 10, 50);
+}
+
+void keyPressed() {
+  if (state == 0 && keyCode == ENTER) state = 1;
+  if (state == 2 && (key == 'r' || key == 'R')) resetGame();
+  if (state == 2 && (key == 's' || key == 'S')) { resetGame(); state = 0; }
+}
+
+// ---------- 캐릭터 ----------
+// 팩맨
+void drawPacman(float x, float y, float r, int s, color c) {
+  fill(c);
+  noStroke();
+  if (s == 1) arc(x, y, 2*r, 2*r, PI/4 , 2*PI - PI/4);
+  else arc(x, y, 2*r, 2*r, 0, 2*PI);
+}
+
+// 도라에몽
+void drawDoraemon(float x, float y, float r){  
+  stroke(0);
+  fill(0,150,255);
+  circle(x,y, 2*r);
+  fill(255);
+  ellipse(x,y+(r/5),(3*r/2),(8*r/5));
+  fill(255);
+  ellipse(x-(r/5),y-(r/2),(2*r/5),(3*r/5));
+  ellipse(x+(r/5),y-(r/2),(2*r/5),(3*r/5));
+  fill(0);
+  ellipse(x-(6*r/50),y-(23*r/50),(1*r/5),(2*r/5));
+  ellipse(x+(6*r/50),y-(23*r/50),(1*r/5),(2*r/5));
+  fill(255);
+  ellipse(x+(5*r/50),y-(22*r/50),(3*r/50),(8*r/50));
+  ellipse(x-(5*r/50),y-(22*r/50),(3*r/50),(8*r/50));
+  fill(255,0,0);
+  circle(x,y-(10*r/50),(10*r/50));
+  fill(255);
+  arc(x,y+(7*r/50),(70*r/50),(70*r/50),0,PI);
+  line(x,y-(5*r/50),x,y+(40*r/50));
+  line(x-20*r/50,y-10*r/50,x-45*r/50,y-20*r/50);
+  line(x-20*r/50,y,x-50*r/50,y);
+  line(x-20*r/50,y+10*r/50,x-45*r/50,y+20*r/50);
+  line(x+20*r/50,y-10*r/50,x+45*r/50,y-20*r/50);
+  line(x+20*r/50,y,x+50*r/50,y);
+  line(x+20*r/50,y+10*r/50,x+45*r/50,y+20*r/50);
+}
+
+// 쥐
+void drawMouse(float x,float y, float d){
+  fill(200);
+  ellipse(x,y,d*6,d*4);
+  ellipse(x-d*3,y-d,d*4,d*2);
+  circle(x-2*d,y-3*d,d*3);
+  fill(0);
+  circle(x-d*5,y-d,d);
+  circle(x-d*3,y-d,0.5*d);
+  line(x+3*d,y,x+5*d,y);
+}
+
+// 아이템
+void drawCat(float x, float y, int type) {
+  if (type == 0) {
+    fill(0);
+    stroke(255);
+  } else {
+    fill(255, 215, 0);
+    stroke(255);
+  }
+  circle(x, y, 40);
+  fill(255);
+  circle(x-10, y-5, 8);
+  circle(x+10, y-5, 8);
+  fill(0);
+  circle(x-10, y-5, 4);
+  circle(x+10, y-5, 4);
+}
