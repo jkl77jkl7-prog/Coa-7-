@@ -1,7 +1,4 @@
-// ======================= Sprint 1 (과일: 사과/레몬/수박) =======================
-// - Fruit 3종(사과, 레몬, 수박) + Character 3개(도라에몽,스누피,버섯돌이) 스폰/이동/소멸
-// - Knife: 마우스를 누르는 동안 표시 (회전 포함)
-// - 충돌/점수/목숨/게임오버/이펙트는 다음 스프린트에서 구현
+// Sprint 1
 
 ArrayList<Fruit> fruits = new ArrayList<Fruit>();
 ArrayList<Npc> npcs = new ArrayList<Npc>();
