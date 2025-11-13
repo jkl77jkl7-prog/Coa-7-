@@ -1,5 +1,5 @@
 // ======================= Sprint 1 (과일: 사과/레몬/수박) =======================
-// - Fruit 3종(사과, 레몬, 수박) + Character 1종(도라에몽) 스폰/이동/소멸
+// - Fruit 3종(사과, 레몬, 수박) + Character 3개(도라에몽,스누피,버섯돌이) 스폰/이동/소멸
 // - Knife: 마우스를 누르는 동안 표시 (회전 포함)
 // - 충돌/점수/목숨/게임오버/이펙트는 다음 스프린트에서 구현
 
@@ -55,9 +55,9 @@ void spawnController() {
     fruits.add(spawnRandomFruit());
   }
   // 캐릭터 스폰 빈도
-  if (npcs.size() < maxNpcs && random(1) < 0.006) {
-    npcs.add(spawnRandomNpcDora());
-  }
+if (npcs.size() < maxNpcs && random(1) < 0.006) {
+  npcs.add(spawnRandomNpc());
+}
 }
 
 // ======================= 전역 스폰 유틸 =======================
@@ -92,15 +92,17 @@ Fruit spawnRandomFruit() {
   return new Fruit(p.x, p.y, v.x, v.y, size, k);
 }
 
-Npc spawnRandomNpcDora() {
+Npc spawnRandomNpc() {
   PVector p = randomEdgeSpawn(50);
   PVector toCenter = PVector.sub(new PVector(width/2, height/2), p).normalize(null);
-  float spd = random(1.2, 2.0);   // 이동 속도
+  float spd = random(1.2, 2.0);
   PVector v = toCenter.copy().mult(spd);
   v.x += random(-0.4, 0.4);
   v.y += random(-0.4, 0.4);
   float size = random(90, 110);
-  return new Npc(p.x, p.y, v.x, v.y, size);
+
+  int kind = (int)random(3); // 0:DORA, 1:SNOOPY, 2:MUSH
+  return new Npc(p.x, p.y, v.x, v.y, size, kind);
 }
 
 // ======================= Fruit =======================
@@ -140,31 +142,37 @@ class Fruit {
 }
 
 // ======================= NPC=======================
+// Class Npc
 class Npc {
   float x, y;
   float vx, vy;
   float d;
+  int kind;        // 0:DORA, 1:SNOOPY, 2:MUSH
   float margin = 50;
 
-  Npc(float x, float y, float vx, float vy, float d) {
+  Npc(float x, float y, float vx, float vy, float d, int kind) {
     this.x = x; this.y = y;
     this.vx = vx; this.vy = vy;
-    this.d = d;
+    this.d = d; this.kind = kind;
   }
 
-  void update() {
-    x += vx;
-    y += vy;
-  }
+  void update() { x += vx; y += vy; }
 
   void render() {
-    drawDoraemonAlive(x, y, d);
+    if (kind == 0) {
+      drawDoraemonAlive(x, y, d);
+    } else if (kind == 1) {
+      drawSnoopyAliveScaled(x, y, d);   // 스누피(살아있음)
+    } else {
+      drawMushAliveScaled(x, y, d);     // 버섯돌이(살아있음)
+    }
   }
 
   boolean isOut() {
     return (x < -margin || x > width + margin || y < -margin || y > height + margin);
   }
 }
+
 
 // ======================= Knife =======================
 class Knife {
@@ -273,7 +281,7 @@ noStroke();
 
 // ======================= 도라에몽 =======================
 void drawDoraemonAlive(float x, float y, float d) {
-  stroke();
+  stroke(0);
   fill(0,150,255);
   circle(x,y,d);
 
@@ -311,3 +319,53 @@ void drawDoraemonAlive(float x, float y, float d) {
   line(x+20, y+10, x+45, y+20);
   noStroke();
 }
+
+// ===== 스누피 =====
+void drawSnoopyAliveScaled(float x, float y, float D) {
+  float d = D / 18;   // 단위 스케일
+  // 살아있는 스누피
+  fill(255);
+  arc(x ,y+4*d,20*d,14*d,PI,3*PI/2) ;
+  arc(x,y-5.6*d,8*d,5.2*d,0,PI/2) ;
+  fill(255);
+  arc(x+8*d,y-5.6*d,8*d,4.8*d,PI,3*PI/2) ;
+  arc(x+8*d,y,13.6*d,16*d,3*PI/2,2*PI) ;
+  arc(x+12*d,y,5.6*d,20*d,0,13*PI/12) ;
+  arc(x+2*d,y+4*d,24*d,10*d,PI/4,PI) ;
+  arc(x-9.6*d,y+4*d,4*d,2.4*d,PI,3*PI/2) ;
+  arc(x-11.2*d,y+4*d,0.8*d,3.2*d,PI/2,PI) ;
+  arc(x-11.2*d,y+4.6*d,3.2*d,2*d,0,PI/2) ;
+  // 눈/코/귀
+  noStroke();
+  fill(255);
+  ellipse(x+3.6*d,y-0.4*d,1.2*d,2.8*d);  // 눈
+  fill(0);
+  ellipse(x-10.4*d,y+4.6*d,1.6*d,1.2*d); // 코
+  ellipse(x+12*d,y+2.8*d,3.2*d,11.2*d);  // 귀
+}
+
+
+// ===== 버섯돌이  =====
+void drawMushAliveScaled(float x, float y, float D) {
+  float d = D / 10;
+  fill(255);
+  stroke(0);
+  circle(x, y, 7.5 * d); // 얼굴  
+  circle(x + 1.5 * d, y - 0.25 * d, 2 * d); // 오른 흰자
+  fill(0);
+  stroke(0);
+  circle(x + d, y - 0.2 * d, d);            // 오른 검자  
+  fill(255);
+  stroke(0);
+  circle(x - 1.5 * d, y - 0.25 * d, 2 * d); // 왼 흰자
+  fill(0);
+  stroke(0);
+  circle(x - d, y - 0.2 * d, d);            // 왼 검자  
+  fill(255, 0, 0);
+  stroke(0);
+  circle(x, y + 1.875 * d, 1.5 * d);        // 입
+  fill(255, 166, 0);
+  noStroke();
+  arc(x, y - 2 * d, 10 * d, 3.75 * d, PI, 2 * PI); // 모자
+}
+
