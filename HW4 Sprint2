@@ -87,7 +87,7 @@ void draw() {
   fill(0, 160);
   textAlign(LEFT, TOP);
   text("Score: " + score + "   Lives: " + lives + "   Fruits: " + fruits.size() + "   NPCs: " + npcs.size(), 10, 10);
-  text("Sprint 2: 클릭해서 칼을 그리면 자름(과일 +1 / 캐릭터 -1 life)", 10, 28);
+  text("Sprint 2", 10, 28);
 }
 
 // ======================= 스폰 컨트롤러 =======================
@@ -96,7 +96,7 @@ void spawnController() {
     fruits.add(spawnRandomFruit());
   }
   if (npcs.size() < maxNpcs && random(1) < 0.006) {
-    npcs.add(spawnRandomNpcDora());
+    npcs.add(spawnRandomNpc());
   }
 }
 
@@ -127,7 +127,7 @@ Fruit spawnRandomFruit() {
   return new Fruit(p.x, p.y, v.x, v.y, size, k);
 }
 
-Npc spawnRandomNpcDora() {
+Npc spawnRandomNpc() {
   PVector p = randomEdgeSpawn(50);
   PVector toCenter = PVector.sub(new PVector(width/2, height/2), p).normalize(null);
   float spd = random(1.2, 2.0);
@@ -135,7 +135,8 @@ Npc spawnRandomNpcDora() {
   v.x += random(-0.4, 0.4);
   v.y += random(-0.4, 0.4);
   float size = random(90, 110);
-  return new Npc(p.x, p.y, v.x, v.y, size);
+  int kind = (int)random(3); // 0:DORA, 1:SNOOPY, 2:MUSH
+  return new Npc(p.x, p.y, v.x, v.y, size, kind);
 }
 
 // ======================= Fruit =======================
@@ -258,20 +259,21 @@ void drawHalfFruit(float cx, float cy, float d, int kind, int side) {
   }
 }
 
-// ======================= NPC (도라에몽) =======================
+// ======================= NPC =======================
 class Npc {
   float x, y;
   float vx, vy;
   float d;
+  int kind;               // 0:DORA, 1:SNOOPY, 2:MUSH
   float margin = 50;
   boolean dead = false;
   boolean counted = false; // 목숨 차감 1회만
   int ttl = 9999;
 
-  Npc(float x, float y, float vx, float vy, float d) {
+  Npc(float x, float y, float vx, float vy, float d, int kind) {
     this.x = x; this.y = y;
     this.vx = vx; this.vy = vy;
-    this.d = d;
+    this.d = d; this.kind = kind;
   }
 
   void update() {
@@ -281,8 +283,15 @@ class Npc {
   }
 
   void render() {
-    if (!dead) drawDoraemonAlive(x, y, d);
-    else drawDoraemonDead(x, y, d); // X 눈
+    if (!dead) {
+      if (kind == 0) drawDoraemonAlive(x, y, d);
+      else if (kind == 1) drawSnoopyAliveScaled(x, y, d);   // 스누피 Alive
+      else drawMushAliveScaled(x, y, d);                    // 버섯돌이 Alive
+    } else {
+      if (kind == 0) drawDoraemonDead(x, y, d);
+      else if (kind == 1) drawSnoopyDeadScaled(x, y, d);    // 스누피 Dead
+      else drawMushDeadScaled(x, y, d);                     // 버섯돌이 Dead
+    }
   }
 
   boolean isOut() {
@@ -495,4 +504,88 @@ void drawDoraemonDead(float x, float y, float d) {
   line(x+20, y+10, x+45, y+20);
 
   noStroke();
+}
+// ===== Snoopy (Alive) =====
+void drawSnoopyAliveScaled(float x, float y, float D) {
+  float d = D / 18.0;
+  fill(255);
+  arc(x ,y+4*d,20*d,14*d,PI,3*PI/2);
+  arc(x,y-5.6*d,8*d,5.2*d,0,PI/2);
+  fill(255);
+  arc(x+8*d,y-5.6*d,8*d,4.8*d,PI,3*PI/2);
+  arc(x+8*d,y,13.6*d,16*d,3*PI/2,2*PI);
+  arc(x+12*d,y,5.6*d,20*d,0,13*PI/12);
+  arc(x+2*d,y+4*d,24*d,10*d,PI/4,PI);
+  arc(x-9.6*d,y+4*d,4*d,2.4*d,PI,3*PI/2);
+  arc(x-11.2*d,y+4*d,0.8*d,3.2*d,PI/2,PI);
+  arc(x-11.2*d,y+4.6*d,3.2*d,2*d,0,PI/2);
+  noStroke();
+  fill(255);
+  ellipse(x+3.6*d,y-0.4*d,1.2*d,2.8*d);  // 눈
+  fill(0);
+  ellipse(x-10.4*d,y+4.6*d,1.6*d,1.2*d); // 코
+  ellipse(x+12*d,y+2.8*d,3.2*d,11.2*d);  // 귀
+}
+
+// ===== Snoopy (Dead, X눈)  =====
+void drawSnoopyDeadScaled(float x, float y, float D) {
+  float d = D / 18.0;
+  fill(255);
+  arc(x ,y+4*d,20*d,14*d,PI,3*PI/2);
+  arc(x,y-5.6*d,8*d,5.2*d,0,PI/2);
+  fill(255);
+  arc(x+8*d,y-5.6*d,8*d,4.8*d,PI,3*PI/2);
+  arc(x+8*d,y,13.6*d,16*d,3*PI/2,2*PI);
+  arc(x+12*d,y,5.6*d,20*d,0,13*PI/12);
+  arc(x+2*d,y+4*d,24*d,10*d,PI/4,PI);
+  arc(x-9.6*d,y+4*d,4*d,2.4*d,PI,3*PI/2);
+  arc(x-11.2*d,y+4*d,0.8*d,3.2*d,PI/2,PI);
+  arc(x-11.2*d,y+4.6*d,3.2*d,2*d,0,PI/2);
+  // X눈
+  stroke(0);
+  float ex = x+3.6*d, ey = y-0.4*d, s = 1.2*d;
+  line(ex - s, ey - s, ex + s, ey + s);
+  line(ex - s, ey + s, ex + s, ey - s);
+  noStroke();
+  fill(0);
+  ellipse(x-10.4*d,y+4.6*d,1.6*d,1.2*d); // 코
+  ellipse(x+12*d,y+2.8*d,3.2*d,11.2*d);  // 귀
+}
+
+// ===== 버섯돌이 (Alive) =====
+void drawMushAliveScaled(float x, float y, float D) {
+  float d = D / 12.0;
+  fill(255); stroke(0);
+  circle(x, y, 7.5 * d);
+  circle(x + 1.5 * d, y - 0.25 * d, 2 * d);
+  fill(0); stroke(0);
+  circle(x + d, y - 0.2 * d, d);
+  fill(255); stroke(0);
+  circle(x - 1.5 * d, y - 0.25 * d, 2 * d);
+  fill(0); stroke(0);
+  circle(x - d, y - 0.2 * d, d);
+  fill(255, 0, 0); stroke(0);
+  circle(x, y + 1.875 * d, 1.5 * d);
+  fill(255, 166, 0); noStroke();
+  arc(x, y - 2 * d, 10 * d, 3.75 * d, PI, 2 * PI);
+}
+
+// ===== 버섯돌이 (Dead, X눈) =====
+void drawMushDeadScaled(float x, float y, float D) {
+  float d = D / 12.0;
+  fill(255); stroke(0);
+  circle(x, y, 7.5 * d);
+  // X눈
+  stroke(0);
+  float rx = x + 1.5 * d, ry = y - 0.25 * d, rs = d;
+  line(rx - rs, ry - rs, rx + rs, ry + rs);
+  line(rx - rs, ry + rs, rx + rs, ry - rs);
+  float lx = x - 1.5 * d, ly = y - 0.25 * d, ls = d;
+  line(lx - ls, ly - ls, lx + ls, ly + ls);
+  line(lx - ls, ly + ls, lx + ls, ly - ls);
+  // 입/모자
+  fill(255, 0, 0); stroke(0);
+  circle(x, y + 1.875 * d, 1.5 * d);
+  fill(255, 166, 0); noStroke();
+  arc(x, y - 2 * d, 10 * d, 3.75 * d, PI, 2 * PI);
 }
