@@ -589,9 +589,8 @@ void drawStartScreen() {
   text("FRUIT CUTTER", width/2, height/2 - 40);
 
   textSize(14);
-  text("사과/레몬/수박은 +1점, 도라에몽은 목숨 -1", width/2, height/2 - 8);
-  text("마우스를 드래그해 칼을 휘두르세요", width/2, height/2 + 12);
-  text("SPACE 를 눌러 시작", width/2, height/2 + 44);
+  text("Fruit +1점, Character -1", width/2, height/2 - 8);
+  text("Start with Space", width/2, height/2 + 44);
 }
 
 void drawGameOverOverlay() {
