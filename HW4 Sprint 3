@@ -589,8 +589,8 @@ void drawStartScreen() {
   text("FRUIT CUTTER", width/2, height/2 - 40);
 
   textSize(14);
-  text("Fruit +1점, Character -1", width/2, height/2 - 8);
-  text("Start with Space", width/2, height/2 + 44);
+  text("Fruit +1, Character -1", width/2, height/2 - 8);
+  text("Start with Space", width/2, height/2 + 34);
 }
 
 void drawGameOverOverlay() {
@@ -611,5 +611,5 @@ void drawGameOverOverlay() {
   text("Time  : " + t, width/2, height/2 + 26);
 
   textSize(14);
-  text("SPACE / R 로 다시 시작", width/2, height/2 + 54);
+  text("Restart with SPACE / R ", width/2, height/2 + 54);
 }
