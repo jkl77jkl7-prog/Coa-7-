@@ -1,8 +1,4 @@
-// ======================= Sprint 2 (로직 확장) =======================
-// - 칼 세그먼트 충돌
-// - 과일 히트: 점수+1, 잘린 조각 2개 스폰 후 서서히 사라짐
-// - 캐릭터 히트: X눈, 목숨-1, 잠깐 표시 후 삭제
-// - 화면 밖 삭제
+// Sprint 2
 
 ArrayList<Fruit> fruits = new ArrayList<Fruit>();
 ArrayList<Npc> npcs = new ArrayList<Npc>();
