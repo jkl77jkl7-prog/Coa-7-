@@ -1,0 +1,313 @@
+// ======================= Sprint 1 (과일: 사과/레몬/수박) =======================
+// - Fruit 3종(사과, 레몬, 수박) + Character 1종(도라에몽) 스폰/이동/소멸
+// - Knife: 마우스를 누르는 동안 표시 (회전 포함)
+// - 충돌/점수/목숨/게임오버/이펙트는 다음 스프린트에서 구현
+
+ArrayList<Fruit> fruits = new ArrayList<Fruit>();
+ArrayList<Npc> npcs = new ArrayList<Npc>();
+Knife knife;
+
+int maxFruits = 8;   // 화면에 동시에 보이는 과일 최대 수
+int maxNpcs = 2;
+
+void setup() {
+  size(640, 400);
+  smooth();
+  knife = new Knife();
+}
+
+void draw() {
+  background(245);
+
+  spawnController();
+
+  // 업데이트 & 렌더
+  for (int i = fruits.size()-1; i >= 0; i--) {
+    Fruit f = fruits.get(i);
+    f.update();
+    f.render();
+    if (f.isOut()) fruits.remove(i);
+  }
+
+  for (int i = npcs.size()-1; i >= 0; i--) {
+    Npc c = npcs.get(i);
+    c.update();
+    c.render();
+    if (c.isOut()) npcs.remove(i);
+  }
+
+  // 칼 표시 (마우스를 누르는 동안)
+  if (mousePressed) {
+    knife.update(mouseX, mouseY, pmouseX, pmouseY);
+    knife.render();
+  }
+
+  // 임시 HUD
+  fill(0, 120);
+  textAlign(LEFT, TOP);
+  text("Fruits: " + fruits.size() + "   NPCs: " + npcs.size() + "   (Sprint 1, slow spawn/speed)", 12, 10);
+}
+
+// ======================= 스폰 컨트롤러 =======================
+void spawnController() {
+  // 과일 스폰 빈도
+  if (fruits.size() < maxFruits && random(1) < 0.02) {
+    fruits.add(spawnRandomFruit());
+  }
+  // 캐릭터 스폰 빈도
+  if (npcs.size() < maxNpcs && random(1) < 0.006) {
+    npcs.add(spawnRandomNpcDora());
+  }
+}
+
+// ======================= 전역 스폰 유틸 =======================
+PVector randomEdgeSpawn(float margin) {
+  int edge = (int)random(4); // 0:왼,1:오,2:상,3:하
+  float x=0, y=0;
+  if (edge == 0) { x = -margin; y = random(height); }
+  else if (edge == 1) { x = width + margin; y = random(height); }
+  else if (edge == 2) { x = random(width); y = -margin; }
+  else { x = random(width); y = height + margin; }
+  return new PVector(x, y);
+}
+
+Fruit spawnRandomFruit() {
+  PVector p = randomEdgeSpawn(40);
+  PVector toCenter = PVector.sub(new PVector(width/2, height/2), p).normalize(null);
+  float spd = random(1.2, 2.2);    // 이동 속도
+  PVector v = toCenter.copy().mult(spd);
+  v.x += random(-0.5, 0.5);        // 약간의 흔들림
+  v.y += random(-0.5, 0.5);
+
+  // 0: 사과, 1: 레몬, 2: 수박
+  int k = (int)random(3);
+  float size;
+  if (k == 0) {         // 사과
+    size = random(70, 110);
+  } else if (k == 1) {  // 레몬(가로 타원)
+    size = random(80, 120);
+  } else {              // 수박(원형)
+    size = random(90, 130);
+  }
+  return new Fruit(p.x, p.y, v.x, v.y, size, k);
+}
+
+Npc spawnRandomNpcDora() {
+  PVector p = randomEdgeSpawn(50);
+  PVector toCenter = PVector.sub(new PVector(width/2, height/2), p).normalize(null);
+  float spd = random(1.2, 2.0);   // 이동 속도
+  PVector v = toCenter.copy().mult(spd);
+  v.x += random(-0.4, 0.4);
+  v.y += random(-0.4, 0.4);
+  float size = random(90, 110);
+  return new Npc(p.x, p.y, v.x, v.y, size);
+}
+
+// ======================= Fruit =======================
+class Fruit {
+  float x, y;
+  float vx, vy;
+  float d;      // 크기 기준
+  int kind;     // 0:사과, 1:레몬, 2:수박
+  float margin = 40;
+
+  Fruit(float x, float y, float vx, float vy, float d, int kind) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.d = d; this.kind = kind;
+  }
+
+  void update() {
+    x += vx;
+    y += vy;
+  }
+
+  void render() {
+    if (kind == 0) {
+      // 사과
+      drawWholeApple(x, y, d);
+    } else if (kind == 1) {
+      // 레몬
+      drawWholeLemon(x, y, d*1.0, d*0.75);
+    } else if (kind == 2) {
+      drawWholeWatermelon(x, y, d);
+    }
+  }
+
+  boolean isOut() {
+    return (x < -margin || x > width + margin || y < -margin || y > height + margin);
+  }
+}
+
+// ======================= NPC=======================
+class Npc {
+  float x, y;
+  float vx, vy;
+  float d;
+  float margin = 50;
+
+  Npc(float x, float y, float vx, float vy, float d) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.d = d;
+  }
+
+  void update() {
+    x += vx;
+    y += vy;
+  }
+
+  void render() {
+    drawDoraemonAlive(x, y, d);
+  }
+
+  boolean isOut() {
+    return (x < -margin || x > width + margin || y < -margin || y > height + margin);
+  }
+}
+
+// ======================= Knife =======================
+class Knife {
+  float x, y;
+  float angle;
+  float len = 120;
+  float bladeW = 18;
+
+  void update(float mx, float my, float pmx, float pmy) {
+    x = mx; y = my;
+    float vx = mx - pmx;
+    float vy = my - pmy;
+    if (abs(vx) + abs(vy) > 0.0001) angle = atan2(vy, vx);
+  }
+
+  void render() {
+    pushMatrix();
+    translate(x, y);
+    rotate(angle);
+
+    // 칼날
+    noStroke();
+    fill(210);
+    beginShape();
+    vertex(-len*0.10, -bladeW*0.5);
+    vertex(len*0.60, -bladeW*0.25);
+    vertex(len*0.95, 0);
+    vertex(len*0.60, bladeW*0.25);
+    vertex(-len*0.10, bladeW*0.5);
+    endShape(CLOSE);
+
+    // 하이라이트
+    stroke(255, 200);
+    strokeWeight(2);
+    line(-len*0.05, -bladeW*0.15, len*0.62, -bladeW*0.02);
+    noStroke();
+
+    // 가드
+    fill(60);
+    rect(-len*0.18, -bladeW*0.6, len*0.04, bladeW*1.2, 3);
+
+    // 손잡이
+    fill(120, 80, 40);
+    rect(-len*0.45, -bladeW*0.45, len*0.32, bladeW*0.9, 6);
+    fill(90, 60, 30, 120);
+    rect(-len*0.45, -bladeW*0.45, len*0.12, bladeW*0.9, 6);
+    fill(30);
+    ellipse(-len*0.48, 0, bladeW*0.6, bladeW*0.9);
+
+    popMatrix();
+  }
+}
+
+// ======================= 렌더 함수: 과일 3종 =======================
+// 통사과
+void drawWholeApple(float x, float y, float d) {
+  fill(220, 30, 40);
+  ellipse(x, y, d, d);
+
+  fill(220, 30, 40);
+  ellipse(x, y-5, d*0.95, d*0.92);
+
+  fill(110, 70, 30);
+  rect(x-5, y - d/2 - 12, 10, 22, 3);
+
+  pushMatrix();
+  translate(x + 28, y - d/2 + 8);
+  rotate(-PI/6);
+  fill(60, 170, 80);
+  ellipse(0, 0, 34, 18);
+  popMatrix();
+
+  fill(255, 255, 255, 90);
+  ellipse(x - d*0.22, y - d*0.22, d*0.28, d*0.28);
+}
+
+// 레몬(통)
+void drawWholeLemon(float x, float y, float w, float h) {
+  fill(255, 220, 50);
+  ellipse(x, y, w, h);
+  fill(255, 220, 50);
+  triangle(x - w/2, y, x - w/2 - 15, y, x - w/2, y - 5);
+  triangle(x + w/2, y, x + w/2 + 15, y, x + w/2, y + 5);
+  fill(255, 255, 255, 80);
+  ellipse(x - w*0.25, y - h*0.25, w*0.25, h*0.25);
+}
+
+// 수박(통)
+void drawWholeWatermelon(float x, float y, float d) {
+  fill(0, 150, 0);
+  ellipse(x, y, d, d);
+
+  stroke(0, 100, 0);
+  strokeWeight(6);
+  for (int i = -2; i <= 2; i++) {
+    float angle = radians(i * 20);
+    float x1 = x + cos(angle) * d/2;
+    float y1 = y + sin(angle) * d/2;
+    line(x, y, x1, y1);
+  }
+
+noStroke();
+  fill(255, 255, 255, 60);
+  ellipse(x - d*0.2, y - d*0.2, d*0.3, d*0.3);
+}
+
+// ======================= 도라에몽 =======================
+void drawDoraemonAlive(float x, float y, float d) {
+  stroke();
+  fill(0,150,255);
+  circle(x,y,d);
+
+  fill(255);
+  ellipse(x, y+10, d-15, 80);
+
+  fill(255);
+  ellipse(x-10, y-25, d-80, 30);
+  fill(0);
+  ellipse(x-6, y-23, d-90, 20);
+  fill(255);
+  ellipse(x-5, y-22, d-97, 8);
+
+  fill(255);
+  ellipse(x+10, y-25, d-80, 30);
+  fill(0);
+  ellipse(x+6, y-23, d-90, 20);
+  fill(255);
+  ellipse(x+5, y-22, d-97, 8);
+
+  fill(255,0,0);
+  circle(x, y-10, d-90);
+
+  fill(255);
+  arc(x, y+7, d-30, d-30, 0, PI);
+
+  line(x, y-5, x, y+40);
+
+  line(x-20, y-10, x-45, y-20);
+  line(x-20, y,    x-50, y);
+  line(x-20, y+10, x-45, y+20);
+
+  line(x+20, y-10, x+45, y-20);
+  line(x+20, y,    x+50, y);
+  line(x+20, y+10, x+45, y+20);
+  noStroke();
+}
